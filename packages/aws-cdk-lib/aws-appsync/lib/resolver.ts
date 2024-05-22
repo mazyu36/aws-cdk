@@ -9,6 +9,7 @@ import { IGraphqlApi } from './graphqlapi-base';
 import { MappingTemplate } from './mapping-template';
 import { FunctionRuntime } from './runtime';
 import { Token } from '../../core';
+import { SyncConfig } from './sync-config';
 
 /**
  * Basic properties for an AppSync resolver
@@ -66,6 +67,14 @@ export interface BaseResolverProps {
    * @default - no code is used
    */
   readonly code?: Code;
+
+  /**
+   * Specifies which Conflict Detection strategy and Resolution strategy
+   * to use when the resolver is invoked.
+   *
+   * @default - No SyncConfig
+   */
+  readonly syncConfig?: SyncConfig;
 }
 
 /**
@@ -147,6 +156,7 @@ export class Resolver extends Construct {
       responseMappingTemplate: props.responseMappingTemplate ? props.responseMappingTemplate.renderTemplate() : undefined,
       cachingConfig: this.createCachingConfig(props.cachingConfig),
       maxBatchSize: props.maxBatchSize,
+      syncConfig: props.syncConfig ? props.syncConfig.bind(): undefined,
     });
     props.api.addSchemaDependency(this.resolver);
     if (props.dataSource) {

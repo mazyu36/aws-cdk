@@ -6,6 +6,7 @@ import { IGraphqlApi } from './graphqlapi-base';
 import { MappingTemplate } from './mapping-template';
 import { FunctionRuntime } from './runtime';
 import { Resource, IResource, Lazy, Fn } from '../../core';
+import { SyncConfig } from './sync-config';
 
 /**
  * the base properties for AppSync Functions
@@ -45,6 +46,13 @@ export interface BaseAppsyncFunctionProps {
    * @default - no code is used
    */
   readonly code?: Code;
+  /**
+   * Specifies which Conflict Detection strategy and Resolution strategy
+   * to use when the resolver is invoked.
+   *
+   * @default - No SyncConfig
+   */
+  readonly syncConfig?: SyncConfig;
 }
 
 /**
@@ -164,6 +172,7 @@ export class AppsyncFunction extends Resource implements IAppsyncFunction {
       functionVersion: '2018-05-29',
       requestMappingTemplate: props.requestMappingTemplate?.renderTemplate(),
       responseMappingTemplate: props.responseMappingTemplate?.renderTemplate(),
+      syncConfig: props.syncConfig ? props.syncConfig.bind(): undefined,
     });
     this.functionName = this.function.attrName;
     this.functionArn = this.function.attrFunctionArn;
