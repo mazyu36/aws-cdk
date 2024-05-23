@@ -2,6 +2,7 @@ import * as path from 'path';
 import { Template } from '../../assertions';
 import { Certificate } from '../../aws-certificatemanager';
 import * as iam from '../../aws-iam';
+import * as lambda from '../../aws-lambda';
 import * as logs from '../../aws-logs';
 import * as cdk from '../../core';
 import * as appsync from '../lib';
@@ -370,4 +371,80 @@ test('when resolver limit is out of range, it throws an error', () => {
   expect(() => buildWithLimit('resolver-limit-max', 10000)).not.toThrow(errorString);
   expect(() => buildWithLimit('resolver-limit-high', 10001)).toThrow(errorString);
 
+});
+
+test('creates resolver with non lambda SyncConfig', () => {
+  // WHEN
+  const ds = api.addNoneDataSource('none');
+  new appsync.Resolver(stack, 'resolver', {
+    api: api,
+    dataSource: ds,
+    typeName: 'test',
+    fieldName: 'test2',
+    syncConfig: new appsync.SyncConfig({
+      conflictDetection: appsync.ConflictDetection.VERSION,
+      conflictHandler: appsync.ConflictHandler.AUTOMERGE,
+    }),
+  });
+
+  // THEN
+  Template.fromStack(stack).hasResourceProperties('AWS::AppSync::Resolver', {
+    SyncConfig:
+    {
+      ConflictDetection: 'VERSION',
+      ConflictHandler: 'AUTOMERGE',
+    },
+  });
+});
+
+test('creates resolver with Lambda SyncConfig', () => {
+  // WHEN
+  const dummyHandler = new lambda.Function(stack, 'DefaultHandler', {
+    runtime: lambda.Runtime.NODEJS_18_X,
+    handler: 'index.handler',
+    code: new lambda.InlineCode('exports.handler = async function(event, context) { console.log(event); return { statusCode: 200, body: "default" }; };'),
+  });
+
+  const ds = api.addNoneDataSource('none');
+  new appsync.Resolver(stack, 'resolver', {
+    api: api,
+    dataSource: ds,
+    typeName: 'test',
+    fieldName: 'test2',
+    syncConfig: new appsync.SyncConfig({
+      conflictDetection: appsync.ConflictDetection.VERSION,
+      conflictHandler: appsync.ConflictHandler.LAMBDA,
+      lambdaConflictHandler: dummyHandler,
+    }),
+  });
+
+  // THEN
+  Template.fromStack(stack).hasResourceProperties('AWS::AppSync::Resolver', {
+    SyncConfig:
+    {
+      ConflictDetection: 'VERSION',
+      ConflictHandler: 'LAMBDA',
+      LambdaConflictHandlerConfig: {
+        LambdaConflictHandlerArn: stack.resolve(dummyHandler.functionArn),
+      },
+    },
+  });
+});
+
+test('throws error when using LAMBDA ConflictHandler without providing lambdaConflictHandler', () => {
+  const ds = api.addNoneDataSource('none');
+
+  // THEN
+  expect(() => {
+    new appsync.Resolver(stack, 'resolver', {
+      api: api,
+      dataSource: ds,
+      typeName: 'test',
+      fieldName: 'test2',
+      syncConfig: new appsync.SyncConfig({
+        conflictDetection: appsync.ConflictDetection.VERSION,
+        conflictHandler: appsync.ConflictHandler.LAMBDA,
+      }),
+    });
+  }).toThrow('You must specify `lambdaConflictHandler` when use `ConflictHandler.LAMBDA`');
 });

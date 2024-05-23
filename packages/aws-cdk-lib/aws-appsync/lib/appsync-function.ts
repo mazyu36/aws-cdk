@@ -5,8 +5,8 @@ import { BaseDataSource } from './data-source';
 import { IGraphqlApi } from './graphqlapi-base';
 import { MappingTemplate } from './mapping-template';
 import { FunctionRuntime } from './runtime';
-import { Resource, IResource, Lazy, Fn } from '../../core';
 import { SyncConfig } from './sync-config';
+import { Resource, IResource, Lazy, Fn } from '../../core';
 
 /**
  * the base properties for AppSync Functions

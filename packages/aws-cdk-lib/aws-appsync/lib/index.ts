@@ -8,6 +8,7 @@ export * from './data-source';
 export * from './mapping-template';
 export * from './resolver';
 export * from './schema';
+export * from './sync-config';
 export * from './graphqlapi';
 export * from './graphqlapi-base';
 export * from './code';

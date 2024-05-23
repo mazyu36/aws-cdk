@@ -8,8 +8,8 @@ import { BaseDataSource } from './data-source';
 import { IGraphqlApi } from './graphqlapi-base';
 import { MappingTemplate } from './mapping-template';
 import { FunctionRuntime } from './runtime';
-import { Token } from '../../core';
 import { SyncConfig } from './sync-config';
+import { Token } from '../../core';
 
 /**
  * Basic properties for an AppSync resolver

@@ -1,9 +1,8 @@
-import { IFunction } from '../../aws-lambda';
 import { CfnResolver } from './appsync.generated';
+import { IFunction } from '../../aws-lambda';
 
 /**
- * Specifies which Conflict Detection strategy and Resolution strategy
- * to use when the resolver is invoked.
+ * The options for SyncConfig
  */
 export interface SyncConfigProps {
   /**
@@ -23,7 +22,7 @@ export interface SyncConfigProps {
    *
    * @default - No function
    */
-  readonly lambdaConflictHandler: IFunction;
+  readonly lambdaConflictHandler?: IFunction;
 }
 
 /**
@@ -59,6 +58,10 @@ export enum ConflictHandler {
   LAMBDA = 'LAMBDA',
 }
 
+/**
+ * The configuration which Conflict Detection strategy and Resolution strategy
+ * to use when the resolver is invoked.
+ */
 export class SyncConfig {
   constructor(private readonly props: SyncConfigProps) {
     if (props.conflictHandler === ConflictHandler.LAMBDA && !props.lambdaConflictHandler) {
