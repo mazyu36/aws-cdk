@@ -11,7 +11,7 @@ import { IFunction } from '../../aws-lambda';
 import { IDomain as IOpenSearchDomain } from '../../aws-opensearchservice';
 import { IServerlessCluster, IDatabaseCluster } from '../../aws-rds';
 import { ISecret } from '../../aws-secretsmanager';
-import { IResolvable, Lazy, Stack, Token } from '../../core';
+import { Duration, IResolvable, Lazy, Stack, Token } from '../../core';
 
 /**
  * Base properties for an AppSync datasource
@@ -214,6 +214,37 @@ export interface DynamoDbDataSourceProps extends BackedDataSourceProps {
    * @default false
    */
   readonly useCallerCredentials?: boolean;
+  /**
+    * The DeltaSyncConfig for a versioned datasource.
+    *
+    * @default - no DeltaSyncCOnfig
+    */
+  readonly deltaSyncConfig?: DeltaSyncConfig;
+  /**
+    * The flag that specifies whether or not to use Conflict Detection
+    * and Resolution with this data source.
+    *
+    * @default false
+    */
+  readonly versioned?: boolean;
+}
+
+/**
+ * Properties for a DeltaSyncConfig
+ */
+export interface DeltaSyncConfig {
+  /**
+   * The number of minutes that an Item is stored in the data source.
+   */
+  readonly baseTableTtl: Duration;
+  /**
+   * The Delta Sync table name.
+   */
+  readonly deltaSyncTableName: string;
+  /**
+   * The number of minutes that a Delta Sync log entry is stored in the Delta Sync table.
+   */
+  readonly deltaSyncTableTtl: Duration;
 }
 
 /**
@@ -227,6 +258,13 @@ export class DynamoDbDataSource extends BackedDataSource {
         tableName: props.table.tableName,
         awsRegion: props.table.env.region,
         useCallerCredentials: props.useCallerCredentials,
+        deltaSyncConfig: props.deltaSyncConfig ?
+          {
+            baseTableTtl: props.deltaSyncConfig.baseTableTtl.toMinutes().toString(),
+            deltaSyncTableName: props.deltaSyncConfig.deltaSyncTableName,
+            deltaSyncTableTtl: props.deltaSyncConfig.deltaSyncTableTtl.toMinutes().toString(),
+          } : undefined,
+        versioned: props.versioned,
       },
     });
     if (props.readOnlyAccess) {

@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as cdk from 'aws-cdk-lib';
@@ -18,7 +19,15 @@ const api = new appsync.GraphqlApi(stack, 'JsResolverApi', {
   logConfig,
 });
 
-const dataSource = api.addNoneDataSource('none');
+const db = new dynamodb.Table(stack, 'DynamoTable', {
+  partitionKey: {
+    name: 'id',
+    type: dynamodb.AttributeType.STRING,
+  },
+  removalPolicy: cdk.RemovalPolicy.DESTROY,
+});
+
+const dataSource = api.addDynamoDbDataSource('DynamoDataSource', db);
 
 const dummyHandler = new lambda.Function(stack, 'DefaultHandler', {
   runtime: lambda.Runtime.NODEJS_18_X,
@@ -26,9 +35,23 @@ const dummyHandler = new lambda.Function(stack, 'DefaultHandler', {
   code: new lambda.InlineCode('exports.handler = async function(event, context) { console.log(event); return { statusCode: 200, body: "default" }; };'),
 });
 
+const addTestFunc = dataSource.createFunction('AddTestFunction', {
+  name: 'addTestFunc',
+  runtime: appsync.FunctionRuntime.JS_1_0_0,
+  code: appsync.Code.fromAsset(path.join(
+    __dirname,
+    'integ-assets',
+    'appsync-js-resolver.js',
+  )),
+  syncConfig: new appsync.SyncConfig({
+    conflictDetection: appsync.ConflictDetection.VERSION,
+    conflictHandler: appsync.ConflictHandler.LAMBDA,
+    lambdaConflictHandler: dummyHandler,
+  }),
+});
+
 new appsync.Resolver(stack, 'AddTestResolver', {
   api,
-  dataSource,
   typeName: 'Mutation',
   fieldName: 'addTest',
   code: appsync.Code.fromAsset(path.join(
@@ -37,6 +60,7 @@ new appsync.Resolver(stack, 'AddTestResolver', {
     'appsync-js-pipeline.js',
   )),
   runtime: appsync.FunctionRuntime.JS_1_0_0,
+  pipelineConfig: [addTestFunc],
   syncConfig: new appsync.SyncConfig({
     conflictDetection: appsync.ConflictDetection.VERSION,
     conflictHandler: appsync.ConflictHandler.LAMBDA,
