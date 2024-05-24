@@ -230,7 +230,7 @@ export interface DynamoDbDataSourceProps extends BackedDataSourceProps {
 }
 
 /**
- * Properties for a DeltaSyncConfig
+ * The DeltaSyncConfig for a versioned datasource.
  */
 export interface DeltaSyncConfig {
   /**
