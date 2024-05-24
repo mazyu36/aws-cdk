@@ -27,7 +27,11 @@ const db = new dynamodb.Table(stack, 'DynamoTable', {
   removalPolicy: cdk.RemovalPolicy.DESTROY,
 });
 
-const dataSource = api.addDynamoDbDataSource('DynamoDataSource', db);
+const dataSource = api.addDynamoDbDataSource('DynamoDataSource', db,{
+  deltaSyncConfig:{
+
+  }
+});
 
 const dummyHandler = new lambda.Function(stack, 'DefaultHandler', {
   runtime: lambda.Runtime.NODEJS_18_X,
