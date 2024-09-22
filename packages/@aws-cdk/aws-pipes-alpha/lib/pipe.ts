@@ -1,5 +1,6 @@
 import { IResource, Resource, Stack } from 'aws-cdk-lib';
-import { IRole, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { IRole, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import { IKey } from 'aws-cdk-lib/aws-kms';
 import { CfnPipe } from 'aws-cdk-lib/aws-pipes';
 import { Construct } from 'constructs';
 import { IEnrichment } from './enrichment';
@@ -164,6 +165,15 @@ export interface PipeProps {
   readonly tags?: {
     [key: string]: string;
   };
+
+  /**
+   * The customer managed key to encrypt pipe data.
+   *
+   * @see https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-pipes-pipe.html#cfn-pipes-pipe-kmskeyidentifier
+   *
+   * @default - uses the default AWS owned key
+   */
+  readonly kmsKey?: IKey;
 }
 
 abstract class PipeBase extends Resource implements IPipe {
@@ -177,7 +187,7 @@ abstract class PipeBase extends Resource implements IPipe {
  * An imported pipe.
  */
 class ImportedPipe extends PipeBase {
-  public readonly pipeName: string ;
+  public readonly pipeName: string;
   public readonly pipeArn: string;
   public readonly pipeRole: IRole;
 
@@ -190,7 +200,7 @@ class ImportedPipe extends PipeBase {
       resource: 'pipe',
       resourceName: this.pipeName,
     });
-    this.pipeRole = Role.fromRoleName(this, 'Role', this.pipeName );
+    this.pipeRole = Role.fromRoleName(this, 'Role', this.pipeName);
   }
 }
 
@@ -234,7 +244,7 @@ export class Pipe extends PipeBase {
     const source = props.source.bind(this);
     props.source.grantRead(this.pipeRole);
     // Add the filter criteria to the source parameters
-    const sourceParameters : CfnPipe.PipeSourceParametersProperty= {
+    const sourceParameters: CfnPipe.PipeSourceParametersProperty = {
       ...source.sourceParameters,
       filterCriteria: props.filter,
     };
@@ -258,6 +268,34 @@ export class Pipe extends PipeBase {
       level: props.logLevel || LogLevel.ERROR,
       includeExecutionData: props.logIncludeExecutionData || undefined,
     };
+
+    /**
+     * CMK setup
+     */
+    // Allow EventBridge Pipes to use customer managed key
+    // See https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-encryption-key-policy.html#eb-encryption-key-policy-pipe
+    if (props?.kmsKey) {
+      props?.kmsKey.addToResourcePolicy(new PolicyStatement({
+        resources: ['*'],
+        actions: ['kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
+        principals: [this.pipeRole],
+        conditions: {
+          StringEquals: {
+            'aws:SourceAccount': this.stack.account,
+            'aws:SourceArn': Stack.of(this).formatArn({
+              service: 'events',
+              resource: 'event-bus',
+              resourceName: eventBusName,
+            }),
+            'kms:EncryptionContext:aws:pipe:arn': Stack.of(this).formatArn({
+              service: 'events',
+              resource: 'event-bus',
+              resourceName: eventBusName,
+            }),
+          },
+        },
+      }));
+    }
 
     // Iterate over all the log destinations and add them to the log configuration
     const logConfiguration = props.logDestinations?.reduce((currentLogConfiguration, destination) => {
@@ -284,6 +322,7 @@ export class Pipe extends PipeBase {
       desiredState: props.desiredState,
       logConfiguration: logConfiguration,
       tags: props.tags,
+      kmsKeyIdentifier: props.kmsKey?.keyArn,
     });
 
     this.pipeName = resource.ref;
