@@ -271,27 +271,28 @@ export class Pipe extends PipeBase {
 
     /**
      * CMK setup
+     *
+     * Allow EventBridge Pipes to use customer managed key
+     * @see https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-encryption-key-policy.html#eb-encryption-key-policy-pipe
      */
-    // Allow EventBridge Pipes to use customer managed key
-    // See https://docs.aws.amazon.com/eventbridge/latest/userguide/eb-encryption-key-policy.html#eb-encryption-key-policy-pipe
     if (props?.kmsKey) {
-      props?.kmsKey.addToResourcePolicy(new PolicyStatement({
+      props.kmsKey.addToResourcePolicy(new PolicyStatement({
         resources: ['*'],
         actions: ['kms:Decrypt', 'kms:GenerateDataKey', 'kms:DescribeKey'],
         principals: [this.pipeRole],
         conditions: {
-          StringEquals: {
-            'aws:SourceAccount': this.stack.account,
-            'aws:SourceArn': Stack.of(this).formatArn({
-              service: 'events',
-              resource: 'event-bus',
-              resourceName: eventBusName,
+          'ArnLike': {
+            'kms:EncryptionContext:aws:pipe:arn':
+            Stack.of(this).formatArn({
+              service: 'pipes',
+              resource: 'pipe',
+              resourceName: props.pipeName,
             }),
-            'kms:EncryptionContext:aws:pipe:arn': Stack.of(this).formatArn({
-              service: 'events',
-              resource: 'event-bus',
-              resourceName: eventBusName,
-            }),
+          },
+          'ForAnyValues:StringEquals': {
+            'kms:EncryptionContextKeys': [
+              'aws:pipe:arn',
+            ],
           },
         },
       }));
