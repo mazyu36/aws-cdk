@@ -286,7 +286,7 @@ export class Pipe extends PipeBase {
             Stack.of(this).formatArn({
               service: 'pipes',
               resource: 'pipe',
-              resourceName: props.pipeName,
+              resourceName: '*',
             }),
           },
           'ForAnyValue:StringEquals': {

@@ -1,6 +1,5 @@
-// import { randomUUID } from 'crypto';
-// import { ExpectedResult, IntegTest } from '@aws-cdk/integ-tests-alpha';
-import { IntegTest } from '@aws-cdk/integ-tests-alpha';
+import { randomUUID } from 'crypto';
+import { ExpectedResult, IntegTest } from '@aws-cdk/integ-tests-alpha';
 import * as cdk from 'aws-cdk-lib';
 import { Code } from 'aws-cdk-lib/aws-lambda';
 import { DynamicInput, EnrichmentParametersConfig, IEnrichment, ILogDestination, IPipe, ISource, ITarget, IncludeExecutionData, InputTransformation, LogDestinationConfig, LogDestinationParameters, LogLevel, Pipe, SourceConfig, TargetConfig } from '../lib';
@@ -106,8 +105,7 @@ class TestLogDestination implements ILogDestination {
 
 }
 
-// const pipe =
-new Pipe(stack, 'Pipe', {
+const pipe = new Pipe(stack, 'Pipe', {
   // pipeName: 'BaseTestPipe',
   source: new TestSource(sourceQueue),
   target: new TestTarget(targetQueue),
@@ -121,26 +119,25 @@ new Pipe(stack, 'Pipe', {
   kmsKey,
 });
 
-// const test =
-new IntegTest(app, 'integtest-pipe-sqs-to-sqs-cmk', {
+const test = new IntegTest(app, 'integtest-pipe-sqs-to-sqs-cmk', {
   testCases: [stack],
 });
 
-// const uniqueIdentifier = randomUUID();
-// const putMessageOnQueue = test.assertions.awsApiCall('SQS', 'sendMessage', {
-//   QueueUrl: sourceQueue.queueUrl,
-//   MessageBody: uniqueIdentifier,
-// });
+const uniqueIdentifier = randomUUID();
+const putMessageOnQueue = test.assertions.awsApiCall('SQS', 'sendMessage', {
+  QueueUrl: sourceQueue.queueUrl,
+  MessageBody: uniqueIdentifier,
+});
 
-// putMessageOnQueue.next(test.assertions.awsApiCall('SQS', 'receiveMessage',
-//   {
-//     QueueUrl: targetQueue.queueUrl,
-//   })).expect(ExpectedResult.objectLike({
-//   Messages: [
-//     {
-//       Body: uniqueIdentifier+ '-' + pipe.pipeName + '-static',
-//     },
-//   ],
-// })).waitForAssertions({
-//   totalTimeout: cdk.Duration.seconds(30),
-// });
+putMessageOnQueue.next(test.assertions.awsApiCall('SQS', 'receiveMessage',
+  {
+    QueueUrl: targetQueue.queueUrl,
+  })).expect(ExpectedResult.objectLike({
+  Messages: [
+    {
+      Body: uniqueIdentifier+ '-' + pipe.pipeName + '-static',
+    },
+  ],
+})).waitForAssertions({
+  totalTimeout: cdk.Duration.seconds(30),
+});
