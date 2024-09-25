@@ -1,0 +1,12 @@
+{
+  "version": "36.0.24",
+  "testCases": {
+    "integtest-pipe-sqs-to-sqs-cmk/DefaultTest": {
+      "stacks": [
+        "aws-cdk-pipes-cmk"
+      ],
+      "assertionStack": "integtest-pipe-sqs-to-sqs-cmk/DefaultTest/DeployAssert",
+      "assertionStackName": "integtestpipesqstosqscmkDefaultTestDeployAssert6CFE3B71"
+    }
+  }
+}

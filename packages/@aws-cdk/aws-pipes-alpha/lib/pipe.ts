@@ -289,7 +289,7 @@ export class Pipe extends PipeBase {
               resourceName: props.pipeName,
             }),
           },
-          'ForAnyValues:StringEquals': {
+          'ForAnyValue:StringEquals': {
             'kms:EncryptionContextKeys': [
               'aws:pipe:arn',
             ],
