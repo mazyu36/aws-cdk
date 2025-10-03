@@ -80,9 +80,9 @@ Data must be provided via "direct put", ie., by using a `PutRecord` or
 
 ## Destinations
 
-Amazon Data Firehose supports multiple AWS and third-party services as destinations, including Amazon S3, Amazon Redshift, and more. You can find the full list of supported destination [here](https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html).
+Amazon Data Firehose supports multiple AWS and third-party services as destinations, including Amazon S3, Amazon Redshift, Apache Iceberg tables, and more. You can find the full list of supported destination [here](https://docs.aws.amazon.com/firehose/latest/dev/create-destination.html).
 
-Currently in the AWS CDK, only S3 is implemented as an L2 construct destination. Other destinations can still be configured using L1 constructs.
+Currently in the AWS CDK, S3 and Iceberg destinations are implemented as L2 construct destinations. Other destinations can still be configured using L1 constructs.
 
 ### S3
 
@@ -124,6 +124,93 @@ const s3Destination = new firehose.S3Bucket(bucket, {
   fileExtension: '.json.gz',
 });
 ```
+
+### Iceberg
+
+Amazon Data Firehose supports delivering data to Apache Iceberg tables stored in Amazon S3 and registered in AWS Glue Data Catalog. This enables you to build modern data lake architectures with ACID transactions, schema evolution, and time travel capabilities.
+
+Defining a delivery stream with an Iceberg destination:
+
+```ts
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
+
+const bucket = new s3.Bucket(this, 'IcebergBucket');
+const icebergDestination = new firehose.IcebergDestination({
+  catalogConfiguration: {
+    catalogArn: 'arn:aws:glue:us-east-1:123456789012:catalog',
+  },
+  s3Configuration: {
+    bucket: bucket,
+  },
+});
+
+new firehose.DeliveryStream(this, 'DeliveryStream', {
+  destination: icebergDestination,
+});
+```
+
+The Iceberg destination supports advanced features for modern data lake architectures:
+
+```ts
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as firehose from 'aws-cdk-lib/aws-kinesisfirehose';
+import { Duration, Size } from 'aws-cdk-lib';
+
+declare const bucket: s3.Bucket;
+const icebergDestination = new firehose.IcebergDestination({
+  catalogConfiguration: {
+    catalogArn: 'arn:aws:glue:us-east-1:123456789012:catalog',
+    warehouseLocation: 's3://my-warehouse-bucket/warehouse/',
+  },
+  s3Configuration: {
+    bucket: bucket,
+    bufferingInterval: Duration.seconds(120),
+    bufferingSize: Size.mebibytes(10),
+    prefix: 'data/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/',
+    errorOutputPrefix: 'errors/',
+  },
+  // Enable append-only mode for better performance with insert-only workloads
+  appendOnly: true,
+  // Configure destination tables
+  destinationTableConfigurationList: [
+    {
+      tableName: 'events',
+      databaseName: 'analytics',
+      uniqueKeys: ['event_id'],
+    },
+  ],
+  // Enable schema evolution to automatically adapt to schema changes
+  schemaEvolutionConfiguration: {
+    enabled: true,
+  },
+  // Enable automatic table creation in Glue Data Catalog
+  tableCreationConfiguration: {
+    enabled: true,
+  },
+  // Configure retry behavior for failed deliveries
+  retryOptions: {
+    duration: Duration.hours(12),
+  },
+});
+```
+
+**Key features of Iceberg destinations:**
+
+- **Schema Evolution**: Automatically adapt to schema changes in your data streams
+- **Table Creation**: Automatically create Iceberg tables in AWS Glue Data Catalog
+- **Append-Only Mode**: Optimize performance for insert-only workloads
+- **ACID Transactions**: Ensure data consistency with atomic operations
+- **Time Travel**: Query historical versions of your data
+- **Automatic Partitioning**: Efficiently organize data using dynamic prefixes
+
+**Required AWS resources:**
+- AWS Glue Data Catalog for table metadata management
+- Amazon S3 bucket for data storage
+- Appropriate IAM permissions (automatically managed by CDK)
+
+See: [Apache Iceberg Destination](https://docs.aws.amazon.com/firehose/latest/dev/apache-iceberg-destination.html)
+in the *Amazon Data Firehose Developer Guide*.
 
 ## Server-side Encryption
 
