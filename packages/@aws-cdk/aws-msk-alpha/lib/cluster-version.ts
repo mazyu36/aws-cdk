@@ -170,11 +170,15 @@ export class KafkaVersion {
 
   /**
    * Kafka version 3.4.0
+   *
+   * @deprecated use the latest runtime instead
    */
   public static readonly V3_4_0 = KafkaVersion.of('3.4.0');
 
   /**
    * Kafka version 3.5.1
+   *
+   * @deprecated use the latest runtime instead
    */
   public static readonly V3_5_1 = KafkaVersion.of('3.5.1');
 
