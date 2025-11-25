@@ -117,6 +117,8 @@ export interface BedrockFoundationModelProps {
  *
  * If you need to use a model name that doesn't exist as a static member, you
  * can instantiate a `BedrockFoundationModel` object, e.g: `new BedrockFoundationModel('my-model')`.
+ *
+ * @see https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html
  */
 export class BedrockFoundationModel implements IBedrockInvokable {
   /****************************************************************************
@@ -343,6 +345,19 @@ export class BedrockFoundationModel implements IBedrockInvokable {
   /****************************************************************************
    *                            ANTHROPIC
    ***************************************************************************/
+
+  /**
+   * Anthropic's Claude Opus 4.5 model
+   *
+   * Excels at production code, sophisticated agents,
+   * and complex office tasks with frontier intelligence at one-third the cost.
+   *
+   * @see https://aws.amazon.com/blogs/machine-learning/claude-opus-4-5-now-in-amazon-bedrock/
+   */
+  public static readonly ANTHROPIC_CLAUDE_OPUS_4_5_V1_0 = new BedrockFoundationModel(
+    'anthropic.claude-opus-4-5-20251101-v1:0',
+    { supportsAgents: true, supportsCrossRegion: true, optimizedForAgents: true },
+  );
 
   /**
    * Anthropic's Claude Haiku 4.5 model, most cost-efficient and fastest.
