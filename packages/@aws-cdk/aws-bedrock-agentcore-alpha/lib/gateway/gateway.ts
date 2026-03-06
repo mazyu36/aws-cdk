@@ -116,6 +116,13 @@ export interface AddLambdaTargetOptions {
    * @default - [GatewayCredentialProvider.iamRole()]
    */
   readonly credentialProviderConfigurations?: ICredentialProviderConfig[];
+
+  /**
+   * Metadata configuration for HTTP header and query parameter propagation
+   * @default - No metadata configuration
+   * @see https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-headers.html
+   */
+  readonly metadataConfiguration?: MetadataConfiguration;
 }
 
 /**
@@ -154,6 +161,13 @@ export interface AddOpenApiTargetOptions {
    * @default - none (no credential configuration on the target; supply providers for secured backends)
    */
   readonly credentialProviderConfigurations?: ICredentialProviderConfig[];
+
+  /**
+   * Metadata configuration for HTTP header and query parameter propagation
+   * @default - No metadata configuration
+   * @see https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-headers.html
+   */
+  readonly metadataConfiguration?: MetadataConfiguration;
 }
 
 /**
@@ -183,6 +197,13 @@ export interface AddSmithyTargetOptions {
    * @default - [GatewayCredentialProvider.iamRole()]
    */
   readonly credentialProviderConfigurations?: ICredentialProviderConfig[];
+
+  /**
+   * Metadata configuration for HTTP header and query parameter propagation
+   * @default - No metadata configuration
+   * @see https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-headers.html
+   */
+  readonly metadataConfiguration?: MetadataConfiguration;
 }
 
 /**
@@ -219,6 +240,13 @@ export interface AddMcpServerTargetOptions {
    * OAuth2 is strongly recommended over NoAuth.
    */
   readonly credentialProviderConfigurations: ICredentialProviderConfig[];
+
+  /**
+   * Metadata configuration for HTTP header and query parameter propagation
+   * @default - No metadata configuration
+   * @see https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/gateway-headers.html
+   */
+  readonly metadataConfiguration?: MetadataConfiguration;
 }
 
 /**
@@ -689,6 +717,7 @@ export class Gateway extends GatewayBase {
       gateway: this,
       lambdaFunction: props.lambdaFunction,
       toolSchema: props.toolSchema,
+      metadataConfiguration: props.metadataConfiguration,
       ...(props.credentialProviderConfigurations && props.credentialProviderConfigurations.length > 0
         ? { credentialProviderConfigurations: props.credentialProviderConfigurations }
         : {}),
@@ -719,6 +748,7 @@ export class Gateway extends GatewayBase {
       apiSchema: props.apiSchema,
       validateOpenApiSchema: props.validateOpenApiSchema,
       credentialProviderConfigurations: props.credentialProviderConfigurations,
+      metadataConfiguration: props.metadataConfiguration,
     });
 
     return target;
@@ -743,6 +773,7 @@ export class Gateway extends GatewayBase {
       description: props.description,
       gateway: this,
       smithyModel: props.smithyModel,
+      metadataConfiguration: props.metadataConfiguration,
       ...(props.credentialProviderConfigurations && props.credentialProviderConfigurations.length > 0
         ? { credentialProviderConfigurations: props.credentialProviderConfigurations }
         : {}),
@@ -773,6 +804,7 @@ export class Gateway extends GatewayBase {
       description: props.description,
       gateway: this,
       endpoint: props.endpoint,
+      metadataConfiguration: props.metadataConfiguration,
       ...(props.credentialProviderConfigurations && props.credentialProviderConfigurations.length > 0
         ? { credentialProviderConfigurations: props.credentialProviderConfigurations }
         : {}),
